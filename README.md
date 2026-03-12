@@ -13,14 +13,16 @@
 💡 How to Use<br>
 Once ZERO asks "How can I help you?", you can simply type your request.
 
-Example 1: "Can you tell me what is 10 plus 5"
+   Example 1: "Can you tell me what is 10 plus 5"
 
-Example 2: <code>20 + 4</code>
+   Example 2: <code>20 + 4</code>
 
-Example 3: "Apa ini √ 144"
+   Example 3: "Apa ini √ 144"
 
 To Exit: Type Exit.
 
+
+---
 <div align="right">
-  <span>🛠️ Developed by 2025-07-28</span>
+  <span>🛠️ Project created by 2025-07-28</span><br>
 </div>
