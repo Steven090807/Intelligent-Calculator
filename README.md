@@ -14,17 +14,17 @@
 
 ## ✨ Technical Architecture & Key Features
 
-### 1) Intent Recognition & NLP Logic
+### 1️⃣ Intent Recognition & NLP Logic
 Instead of relying on rigid syntax, ZERO identifies user "intent" by scanning input against bilingual keyword banks.
 * **Contextual Awareness:** The system detects the language of the request and dynamically adjusts its response language (EN or MY).
 * **Regex-Based Extraction:** Uses Regular Expressions to isolate numerical data from conversational text (e.g., extracting `16` from *"What is the square root of 16?"*).
 
-### 2) Robustness & User Experience
+### 2️⃣ Robustness & User Experience
 * **Auto-Correction Engine:** Built-in spelling correction for common typos (e.g., `squar` → `square`, `tamba` → `tambah`).
 * **Interactive Confirmation:** Implements a confirmation loop for ambiguous inputs to ensure calculation accuracy.
 * **Data Persistence:** Integrated with `CSV` and `Pandas` to log, store, and display calculation history with timestamps.
 
-### 3) Advanced Operations
+### 3️⃣ Advanced Operations
 Supports standard arithmetic plus:
 * **Advanced Math:** Square roots (`√`), Exponents (`^`), and Factorials (`!`).
 * **Input Validation:** Handles edge cases like division by zero and non-numeric factorial requests.
