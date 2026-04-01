@@ -75,3 +75,5 @@ Supports standard arithmetic plus:
 
 > **Degree Project** &nbsp; | &nbsp; Completed on Jul 28, 2025  
 > *Developed with passion for Software Engineering.*
+
+

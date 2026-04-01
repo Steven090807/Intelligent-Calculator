@@ -398,7 +398,7 @@ while True:
         print("Program close...\n")
         break
 
-    # String Validation Layer
+    # Input Validation Layer
     math_keywords = ['add', 'plus', 'tambah', 'minus', 'tolak', 'darab', 'bahagi', 'punca', 'kuasa', 'square', 'root']
     greet_keywords = ["hello", "hi", "hey", "hallo", "halo", "apa khabar"]
     friendly_keywords = ["nice to meet you", "gembira berjumpa", "senang jumpa"]
