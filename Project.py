@@ -4,6 +4,7 @@ import time
 import pandas as pd
 from datetime import datetime
 import math
+import re
 
 
 
@@ -121,10 +122,11 @@ def factorial(method):
         if keyword in method:
             try:
                 if '!' in method:
-                    part = method.split('!')[0].strip()
-                    if not part.isdigit():
-                         return Invalid_input("Invalid input for factorial. Must be non-negative integer")
-                    num = int(part)
+                    math_match = re.search(r'(\d+)\s*!', method)
+
+                    if not math_match:
+                        continue
+                    num = int(math_match.group(1))
 
                 else:
                     num_str = ''.join(filter(str.isdigit, method))
@@ -234,7 +236,7 @@ def ZeroCalculator(method):
         'factori': 'factorial', 'factrial': 'factorial',
         'percen': 'percent', 'percantage': 'percentage', 
         'powr': 'power of', 'raisd': 'raised to', 'rasied': 'raised to',
-        'pls': 'plus', 'plss': 'plus', 'pluss': 'plus',
+        'pls': 'plus', 'plss': 'plus', 'pluss': 'plus', 'plu': 'plus',
         'minu': 'minus', 'minss': 'minus', 'minss': 'minus',
         'subtrac': 'subtract', 'substract': 'subtract', 'subtrakt': 'subtract', 'subtractt': 'subtract',
         'time': 'times', 'timss': 'times', 'timess': 'times',
