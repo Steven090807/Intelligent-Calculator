@@ -152,8 +152,12 @@ def factorial(method):
 #--- Basic Operations (+, -, *, /) ---
 def addition(method):
     for keyword in ['+', 'plus', 'add', 'tambah']:
-        if keyword in method:
-            numbers = extract_numbers(method, keyword)
+        if keyword in method.lower():
+            numbers = [int(n) for n in re.findall(r'\d+', method)]
+
+            if not numbers:
+                return respond("I couldn't find any numbers to add!", method, "EN")
+            
             result = sum(numbers)
             user_input = " + ".join(map(str, numbers)) + " ="
             today = datetime.now().strftime("%#m/%#d/%Y")
@@ -167,8 +171,13 @@ def addition(method):
 
 def subtraction(method):
     for keyword in ['-', 'minus', 'subtract', 'tolak', 'kurang']:
-        if keyword in method:
-            numbers = extract_numbers(method, keyword)
+        if keyword in method.lower():
+
+            numbers = [int(n) for n in re.findall(r'\d+', method)]
+
+            if not numbers:
+                return respond("I couldn't find any numbers to subtract!", method, "EN")
+
             result = numbers[0]
             for num in numbers[1:]:
                 result -= num
@@ -185,8 +194,11 @@ def subtraction(method):
 
 def multiplication(method):
     for keyword in ['*', 'times', 'multiply', 'darab', 'kali']:
-        if keyword in method:
-            numbers = extract_numbers(method, keyword)
+        if keyword in method.lower():
+            numbers = [int(n) for n in re.findall(r'\d+', method)]
+
+            if not numbers:
+                return respond("I couldn't find any numbers to multiply!", method, "EN")
             result = 1
             for num in numbers:
                 result *= num
@@ -203,8 +215,11 @@ def multiplication(method):
 
 def division(method):
     for keyword in ['/', 'divide', 'bahagi', 'bagi']:
-        if keyword in method:
-            numbers = extract_numbers(method, keyword)
+        if keyword in method.lower():
+            numbers = [int(n) for n in re.findall(r'\d+', method)]
+
+            if not numbers:
+                return respond("I couldn't find any numbers to divide!", method, "EN")
             
             result = numbers[0]
             for num in numbers[1:]:
@@ -222,7 +237,7 @@ def division(method):
             return respond(f"{user_input} {result:.2f}", method, "MY" if keyword == 'bahagi' else "EN")
     return None
 
-import re
+
 def ZeroCalculator(method):
     method = method.lower()
 
@@ -369,11 +384,11 @@ while True:
         user_input = input("\n(Zero)\nHow can I help you?\n\n(You)\n")
 
     user_input_lower = user_input.lower().strip()
-    if any(phrase in user_input_lower for phrase in ["switch to malay", "switch to melayu", "tukar ke bahasa melayu"]):
+    if any(phrase in user_input_lower for phrase in ["change to m","switch to m", "tukar ke b", "tukar ke m"]):
         lang = "MY"
         print("\n(Zero)\n✅ Bahasa Melayu diaktifkan!")
         continue
-    elif any(phrase in user_input_lower for phrase in ["switch to english", "tukar ke bahasa inggeris"]):
+    elif any(phrase in user_input_lower for phrase in ["change to e", "switch to e", "tukar ke bahasa inggeris", "tukar ke e"]):
         lang = "EN"
         print("\n(Zero)\n✅ English language activated!")
         continue
@@ -383,12 +398,38 @@ while True:
         print("Program close...\n")
         break
 
+    # String Validation Layer
+    math_keywords = ['add', 'plus', 'tambah', 'minus', 'tolak', 'darab', 'bahagi', 'punca', 'kuasa', 'square', 'root']
+    greet_keywords = ["hello", "hi", "hey", "hallo", "halo", "apa khabar"]
+    friendly_keywords = ["nice to meet you", "gembira berjumpa", "senang jumpa"]
+    casual_keywords = ["what's up", "whatsapp", "sup", "wassup"]
+    
+    has_math_intent = any(word in user_input_lower for word in math_keywords) or any(op in user_input_lower for op in ['+', '-', '*', '/', '^'])
+
+    if not has_math_intent:
+        if user_input_lower.isdigit():
+            msg = "Sorry, do you need to calculate something?" if lang != "MY" else "Maaf, anda mahu kira sesuatu ke? (contoh: tambah 10 dan 5)"
+            print(f"\n(Zero)\n{msg}")
+            continue
+        elif any(phrase in user_input_lower for phrase in friendly_keywords):
+            msg = "It's a pleasure to meet you! I'd willing to help anytime. 🧮" if lang != "MY" else "Saya pun gembira berjumpa anda! Saya sedia membantu kira-kira bila-bila masa. 🧮"
+            print(f"\n(Zero)\n{msg}")
+            continue
+        elif any(phrase in user_input_lower for phrase in casual_keywords):
+            msg = "What's up man!! I've been waiting for you for a long time"
+            print(f"\n(Zero)\n{msg}")
+            continue
+        elif any(greet in user_input_lower for greet in greet_keywords):
+            msg = "Hello! I'm Zero, your math assistant" if lang != "MY" else "Hai! Saya Zero, pembantu matematik anda."
+            print(f"\n(Zero)\n{msg}")
+            continue
+        else:
+            msg = "Sorry, I don't understand the Martian language 🤣" if lang != "MY" else "Maaf, saya tak faham bahasa Marikh ni 🤣"
+            print(f"\n(Zero)\n{msg}")
+            continue
+
     result_lang = ZeroCalculator(user_input)
 
     if result_lang in ["MY", "EN", "NORMAL"]:
         lang = result_lang
-    elif result_lang == "EXIT":
-        print("\n(Zero)\nThis project is being closed...")
-        time.sleep(2)
-        print("Program close...\n")
-        break
+   
