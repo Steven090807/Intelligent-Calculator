@@ -87,7 +87,6 @@ def percentage(method):
     for keyword in ['%', 'percent', 'percentage', 'peratus', 'peratusan', 'daripada']:
         if keyword in method.lower():
             try:
-                # Case 1: "50% of 200"
                 match = re.search(r'(\d+)\s*%.*?(\d+)', method)
                 if match:
                     num1 = float(match.group(1))
@@ -96,7 +95,6 @@ def percentage(method):
                     user_input = f"{num1}% of {num2} ="
 
                 else:
-                    # Case 2: "50%"
                     match = re.search(r'(\d+)', method)
                     if not match:
                         return Invalid_input("Invalid percentage format")
@@ -145,13 +143,12 @@ def factorial(method):
     for keyword in ['!', 'factorial', 'faktorial', 'bang', 'silang']:
         if keyword in method.lower():
             try:
-                # Case 1: "5!"
                 match = re.search(r'(\d+)\s*!', method)
                 if match:
                     num = int(match.group(1))
 
                 else:
-                    # Case 2: "factorial 5", "5 factorial", "factorial of 5"
+
                     match = re.search(r'(\d+)', method)
                     if not match:
                         return Invalid_input("Invalid factorial format")
@@ -305,7 +302,7 @@ def ZeroCalculator(method):
         if lang_result:
             return lang_result
             
-    return None
+   
 
 
 
