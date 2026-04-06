@@ -7,6 +7,12 @@ import math
 import re
 
 
+word_to_num = {
+    "zero": 0, "one": 1, "two": 2, "three": 3,
+    "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9,
+    "ten": 10
+}
 
 def respond(result_str, method, lang_if_unsure="EN"):
     Response = [
@@ -79,26 +85,44 @@ def square_root(method):
 
 def percentage(method):
     for keyword in ['%', 'percent', 'percentage', 'peratus', 'peratusan', 'daripada']:
-        if keyword in method:
+        if keyword in method.lower():
             try:
-                method_clean = method.replace('%', '').replace('percent', '').replace('peratus', '')
-                num = next(float(p.strip(" ?!.")) for p in method_clean.split() if p.replace('.', '', 1).isdigit())
-                result = num / 100
-                user_input = f"{num}% ="
+                # Case 1: "50% of 200"
+                match = re.search(r'(\d+)\s*%.*?(\d+)', method)
+                if match:
+                    num1 = float(match.group(1))
+                    num2 = float(match.group(2))
+                    result = (num1 / 100) * num2
+                    user_input = f"{num1}% of {num2} ="
+
+                else:
+                    # Case 2: "50%"
+                    match = re.search(r'(\d+)', method)
+                    if not match:
+                        return Invalid_input("Invalid percentage format")
+
+                    num1 = float(match.group(1))
+                    result = num1 / 100
+                    user_input = f"{num1}% ="
+
                 today = datetime.now().strftime("%#m/%#d/%Y")
+
                 with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
                     csv.writer(file).writerow([user_input, result, today])
+
                 if keyword in ['peratus', 'peratusan', 'daripada']:
-                    return respond(f"Peratusan {num} ialah {result:.4f}", method, "MY")
+                    return respond(f"Peratusan {num1} ialah {result:.4f}", method, "MY")
                 else:
-                    return respond(f"{num}% = {result}", method, "EN")
+                    return respond(f"{user_input} {result}", method, "EN")
+
             except:
                 return Invalid_input("Invalid percentage format")
+
     return None
 
 
 def exponentiation(method):
-    for keyword in ['**', 'power of', 'raised to', 'kuasa', 'berpangkat']:
+    for keyword in ['**', '^','power of', 'raised to', 'kuasa', 'berpangkat']:
         if keyword in method:
             try:
                 parts = method.split(keyword)
@@ -119,32 +143,40 @@ def exponentiation(method):
 
 def factorial(method):
     for keyword in ['!', 'factorial', 'faktorial', 'bang', 'silang']:
-        if keyword in method:
+        if keyword in method.lower():
             try:
-                if '!' in method:
-                    math_match = re.search(r'(\d+)\s*!', method)
-
-                    if not math_match:
-                        continue
-                    num = int(math_match.group(1))
+                # Case 1: "5!"
+                match = re.search(r'(\d+)\s*!', method)
+                if match:
+                    num = int(match.group(1))
 
                 else:
-                    num_str = ''.join(filter(str.isdigit, method))
-                    if not num_str:
-                        return Invalid_input("Invalid input for factorial. Must be non-negative integer")
-                    num = int(num_str)
+                    # Case 2: "factorial 5", "5 factorial", "factorial of 5"
+                    match = re.search(r'(\d+)', method)
+                    if not match:
+                        return Invalid_input("Invalid factorial format")
+
+                    num = int(match.group(1))
+
+                if num < 0:
+                    return Invalid_input("Factorial only defined for non-negative integers")
 
                 result = math.factorial(num)
-                user_input = f"{num}!"
+
+                user_input = f"{num}! ="
                 today = datetime.now().strftime("%#m/%#d/%Y")
+
                 with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
                     csv.writer(file).writerow([user_input, result, today])
+
                 if keyword in ['faktorial', 'bang', 'silang']:
                     return respond(f"Faktorial {num} ialah {result}", method, "MY")
                 else:
                     return respond(f"{num}! = {result}", method, "EN")
+
             except:
-                return Invalid_input("Invalid input for factorial. Must be non-negative integer")
+                return Invalid_input("Invalid factorial format")
+
     return None
 
 
@@ -153,7 +185,7 @@ def factorial(method):
 def addition(method):
     for keyword in ['+', 'plus', 'add', 'tambah']:
         if keyword in method.lower():
-            numbers = [int(n) for n in re.findall(r'\d+', method)]
+            numbers = extract_all_numbers(method)
 
             if not numbers:
                 return respond("I couldn't find any numbers to add!", method, "EN")
@@ -173,7 +205,7 @@ def subtraction(method):
     for keyword in ['-', 'minus', 'subtract', 'tolak', 'kurang']:
         if keyword in method.lower():
 
-            numbers = [int(n) for n in re.findall(r'\d+', method)]
+            numbers = extract_all_numbers(method)
 
             if not numbers:
                 return respond("I couldn't find any numbers to subtract!", method, "EN")
@@ -195,7 +227,7 @@ def subtraction(method):
 def multiplication(method):
     for keyword in ['*', 'times', 'multiply', 'darab', 'kali']:
         if keyword in method.lower():
-            numbers = [int(n) for n in re.findall(r'\d+', method)]
+            numbers = extract_all_numbers(method)
 
             if not numbers:
                 return respond("I couldn't find any numbers to multiply!", method, "EN")
@@ -216,7 +248,7 @@ def multiplication(method):
 def division(method):
     for keyword in ['/', 'divide', 'bahagi', 'bagi']:
         if keyword in method.lower():
-            numbers = [int(n) for n in re.findall(r'\d+', method)]
+            numbers = extract_all_numbers(method)
 
             if not numbers:
                 return respond("I couldn't find any numbers to divide!", method, "EN")
@@ -236,6 +268,18 @@ def division(method):
 
             return respond(f"{user_input} {result:.2f}", method, "MY" if keyword == 'bahagi' else "EN")
     return None
+
+def extract_all_numbers(method):
+    numbers = []
+
+    numbers.extend([int(n) for n in re.findall(r'\d+', method)])
+
+    words = method.lower().split()
+    for word in words:
+        if word in word_to_num:
+            numbers.append(word_to_num[word])
+
+    return numbers
 
 
 def ZeroCalculator(method):
@@ -398,13 +442,34 @@ while True:
         print("Program close...\n")
         break
 
-    # Input Validation Layer
-    math_keywords = ['add', 'plus', 'tambah', 'minus', 'tolak', 'darab', 'bahagi', 'punca', 'kuasa', 'square', 'root']
+    math_keywords = [
+        'add', 'plus', 'sum', 'total', 'increase', '+',
+        'tambah', 'campur', 'jumlah',
+        'minus', 'subtract', 'less', 'difference', 'deduct', '-',
+        'tolak', 'kurang', 'beza',
+        'times', 'multiply', 'multiplied', 'product', '*',
+        'darab', 'kali', 'ganda',
+        'divide', 'divided', 'over', 'quotient', '/',
+        'bahagi', 'bagi',
+        'power', 'raised', 'exponent', '^',
+        'kuasa', 'berpangkat', 'pangkat',
+        'square root', 'sqrt', 'root', '√',
+        'punca kuasa dua', 'akar',
+        'square', 'kuasa dua',
+        'percent', 'percentage', '%',
+        'peratus', 'peratusan', 'daripada',
+        'factorial', '!', 
+        'faktorial', 'bang', 'silang',
+        'what is', 'calculate', 'compute', 'find', 'evaluate',
+        'berapa', 'kira', 'hitung'
+    ]
     greet_keywords = ["hello", "hi", "hey", "hallo", "halo", "apa khabar"]
     friendly_keywords = ["nice to meet you", "gembira berjumpa", "senang jumpa"]
     casual_keywords = ["what's up", "whatsapp", "sup", "wassup"]
+
+    has_math_intent = any(word in user_input_lower for word in math_keywords) \
+                    or any(op in user_input_lower for op in ['+', '-', '*', '/', '^'])
     
-    has_math_intent = any(word in user_input_lower for word in math_keywords) or any(op in user_input_lower for op in ['+', '-', '*', '/', '^'])
 
     if not has_math_intent:
         if user_input_lower.isdigit():
