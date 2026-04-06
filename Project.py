@@ -75,7 +75,7 @@ def square_root(method):
                 if 'punca kuasa dua' in keyword:
                     return respond(f"Punca kuasa dua bagi {number} ialah {result:.4f}", method, "MY")
                 else:
-                    return respond(f"√{number} = {result:.4f}", method, "EN")
+                    return respond(f"√{number} = {result:.2f}", method, "EN")
             
             except:
                 return Invalid_input("Invalid square root input")
@@ -279,13 +279,62 @@ def extract_all_numbers(method):
 
     return numbers
 
+def clean_history_file(file_path='CSV/calculate_history.csv'):
+    try:
+        df = pd.read_csv(file_path)
+        df['User Input'] = df['User Input'].str.replace(r'[^0-9+\-*/.^()= ]', '', regex=True).str.strip()
+        df.to_csv(file_path, index=False, encoding='utf-8-sig')
+    except:
+        pass
+
+
 
 def ZeroCalculator(method):
     method = method.lower()
 
+    # --- History ---
+    if any(kw in method for kw in ['open history', 'calculate history', 'buka', 'pengiraan sejarah']):
+        try:
+            try:
+                history = pd.read_csv('CSV/calculate_history.csv', encoding='utf-8')
+            except:
+                history = pd.read_csv('CSV/calculate_history.csv', encoding='latin-1')
+
+            pd.set_option('display.max_row', None)
+            pd.set_option('display.max_columns', None)
+            pd.set_option('display.width', None)
+            pd.set_option('display.colheader_justify', 'center')
+            if 'calculate' in method or 'history' in method:
+                print("\n(Zero)\nSure! Here's your full calculation history:\n")
+                print("    ----- Calculate History -----\n", history)
+                return "EN"
+            else:
+                print("\n(Zero)\nBaik! Ini semua sejarah pengiraan anda:\n")
+                print("    ----- Sejarah Pengiraan -----\n", history)
+                return "MY"
+        except :
+            print("\n(Zero)\nNo calculation history found.")
+        return "NORMAL"
+
+    if any(kw in method for kw in ['clear the history', 'delete the history', 'bersihkan','hapus', 'sejarah']):
+        try:
+            with open('CSV/calculate_history.csv', 'w', newline='', encoding='utf-8-sig') as file:
+                writer = csv.writer(file)
+                writer.writerow(["User Input", "Result", "Date"])
+            
+            if any(kw in method for kw in ['bersihkan', 'hapus', 'sejarah']):
+                print("\n(Zero)\nSejarah pengiraan telah berjaya dibersihkan! 🧹")
+                return "MY"
+            else:
+                print("\n(Zero)\nHistory cleared successfully! 🧹")
+                return "EN"
+        except:
+            print("\n(Zero)\nNo history file found to clear.")
+            return "NORMAL"
+
     if re.search(r'\d+\s*[+\-*/^()]\s*\d+', method):
         try:
-            clean_method = re.sub(r'[^0-9+\-*/.**() ]', '', method.replace('^', '**'))
+            clean_method = re.sub(r'[^0-9+\-*/.**() ]', '', method.replace('^', '**')).strip()
             result = eval(clean_method)
             
             user_input = f"{method} ="
@@ -293,7 +342,7 @@ def ZeroCalculator(method):
             with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
                 csv.writer(file).writerow([user_input, result, today])
             
-            return respond(f"{method} = {result}", method, "EN")
+            return respond(f"{clean_method} = {result:.2f}", method, "EN")
         except:
             pass 
 
@@ -301,9 +350,6 @@ def ZeroCalculator(method):
         lang_result = function(method)
         if lang_result:
             return lang_result
-            
-   
-
 
 
     corrections = {
@@ -378,45 +424,6 @@ def ZeroCalculator(method):
         if lang_result:
             return lang_result
 
-    # --- History ---
-    if any(kw in method for kw in ['open', 'calculate history', 'buka', 'pengiraan sejarah']):
-        try:
-            try:
-                history = pd.read_csv('CSV/calculate_history.csv', encoding='utf-8')
-            except:
-                history = pd.read_csv('CSV/calculate_history.csv', encoding='latin-1')
-
-            pd.set_option('display.max_row', None)
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.width', None)
-            pd.set_option('display.colheader_justify', 'center')
-            if 'calculate' in method or 'history' in method:
-                print("\n(Zero)\nSure! Here's your full calculation history:\n")
-                print("    ----- Calculate History -----\n", history)
-                return "EN"
-            else:
-                print("\n(Zero)\nBaik! Ini semua sejarah pengiraan anda:\n")
-                print("    ----- Sejarah Pengiraan -----\n", history)
-                return "MY"
-        except :
-            print("\n(Zero)\nNo calculation history found.")
-        return "NORMAL"
-    
-    if any(kw in method for kw in ['clear', 'delete', 'history', 'bersihkan','hapus', 'sejarah']):
-        try:
-            with open('CSV/calculate_history.csv', 'w') as file:
-                writer = csv.writer(file)
-                writer.writerow(["User Input", "Result", "Date"])
-            if any(kw in method for kw in ['bersihkan', 'hapus', 'sejarah']):
-                print("\n(Zero)\nSejarah pengiraan telah berjaya dibersihkan! 🧹")
-                return "MY"
-            else:
-                print("\n(Zero)\nHistory cleared successfully! 🧹")
-                return "EN"
-        except :
-            print("\n(Zero)\nNo history file found to clear.")
-        return "NORMAL"
-        
     
 
 
@@ -438,10 +445,13 @@ lang = "NORMAL"
 while True:
     if lang == "EN":
         user_input = input("\n(Zero)\nAnything else to calculate?\n\n(You)\n")
+        clean_history_file()
     elif lang == "MY":
         user_input = input("\n(Zero)\nAda lagi nak kira?\n\n(You)\n")
+        clean_history_file()
     else:
         user_input = input("\n(Zero)\nHow can I help you?\n\n(You)\n")
+        clean_history_file()
 
     user_input_lower = user_input.lower().strip()
     if any(phrase in user_input_lower for phrase in ["change to m","switch to m", "tukar ke b", "tukar ke m"]):
@@ -478,6 +488,7 @@ while True:
         'faktorial', 'bang', 'silang',
         'what is', 'calculate', 'compute', 'find', 'evaluate',
         'berapa', 'kira', 'hitung'
+        'history', 'sejarah', 'view', 'show', 'clear', 'delete'
     ]
     greet_keywords = ["hello", "hi", "hey", "hallo", "halo", "apa khabar"]
     friendly_keywords = ["nice to meet you", "gembira berjumpa", "senang jumpa"]
@@ -500,7 +511,7 @@ while True:
             msg = "What's up man!! I've been waiting for you for a long time"
             print(f"\n(Zero)\n{msg}")
             continue
-        elif any(greet in user_input_lower for greet in greet_keywords):
+        elif any(greet in user_input_lower.split() for greet in greet_keywords):
             msg = "Hello! I'm Zero, your math assistant" if lang != "MY" else "Hai! Saya Zero, pembantu matematik anda."
             print(f"\n(Zero)\n{msg}")
             continue
