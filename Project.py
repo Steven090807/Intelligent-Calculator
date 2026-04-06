@@ -269,6 +269,7 @@ def division(method):
             return respond(f"{user_input} {result:.2f}", method, "MY" if keyword == 'bahagi' else "EN")
     return None
 
+
 def extract_all_numbers(method):
     numbers = []
 
@@ -285,8 +286,26 @@ def extract_all_numbers(method):
 def ZeroCalculator(method):
     method = method.lower()
 
-    if re.fullmatch(r"[+\-*/^%! ]+", method):
-        return Invalid_input("⚠️  Invalid input, please try again ⚠️")
+    if re.search(r'\d+\s*[+\-*/^()]\s*\d+', method):
+        try:
+            clean_method = re.sub(r'[^0-9+\-*/.**() ]', '', method.replace('^', '**'))
+            result = eval(clean_method)
+            
+            user_input = f"{method} ="
+            today = datetime.now().strftime("%#m/%#d/%Y")
+            with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
+                csv.writer(file).writerow([user_input, result, today])
+            
+            return respond(f"{method} = {result}", method, "EN")
+        except:
+            pass 
+
+    for function in [square_root, percentage, exponentiation, factorial, addition, subtraction, multiplication, division]:
+        lang_result = function(method)
+        if lang_result:
+            return lang_result
+            
+    return None
 
 
 
@@ -488,10 +507,7 @@ while True:
             msg = "Hello! I'm Zero, your math assistant" if lang != "MY" else "Hai! Saya Zero, pembantu matematik anda."
             print(f"\n(Zero)\n{msg}")
             continue
-        else:
-            msg = "Sorry, I don't understand the Martian language 🤣" if lang != "MY" else "Maaf, saya tak faham bahasa Marikh ni 🤣"
-            print(f"\n(Zero)\n{msg}")
-            continue
+     
 
     result_lang = ZeroCalculator(user_input)
 
