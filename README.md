@@ -49,11 +49,38 @@ Supports standard arithmetic plus:
 | **Natural English** | *"Can you help me add 10 and 5?"* | *"Got it! The result is 15"* |
 | **Natural Malay** | *"Berapa punca kuasa dua 144?"* | *"Mesti boleh! Hasilnya adalah 12"* |
 | **Mathematical** | `(20 * 4) + 5` | *"Done! Here is the total: 85"* |
-| **System** | *"Show calculation history"* | *[Displays formatted Pandas table]* |
+| **System** | *"Open calculate history"* | *[Displays formatted Pandas table]* |
 
 > [!TIP]
 > **To Exit:** Simply type `Exit` to end the session.
 <br>
+
+## 🚀 Getting Started
+
+To enjoy the full interactive experience of **SPEED.AI**, please follow these setup steps:
+
+
+### <code> Step 1:</code> Prerequisites
+Navigate to the Project Directory: Open your terminal and move into the project folder. If you renamed the folder after cloning, use your custom name:
+
+```bash
+cd Intelligent-Calculator
+```
+
+
+### <code> Step 2:</code> Prerequisites
+Ensure you have **Python 3.x** installed. You can install all necessary dependencies at once using the provided requirements file:
+
+```bash
+pip install -r requirements.txt
+```
+
+### <code> Step 3:</code> Repository Setup
+Data Check: Ensure the CSV File has been save to your local computer (File logo has activate):
+
+```bash
+calculate_history.csv
+```
 
 ## Demo Display
 <div >
