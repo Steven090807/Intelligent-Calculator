@@ -5,13 +5,26 @@ import pandas as pd
 from datetime import datetime
 import math
 import re
+import os
+
+
+#--- Global CSV Path ---
+CSV_FOLDER = os.path.dirname(os.path.abspath(__file__))
+history_path = os.path.join(CSV_FOLDER, 'CSV', 'calculate_history.csv')
+
+if not os.path.exists(os.path.join(CSV_FOLDER, 'CSV')):
+    os.makedirs(os.path.join(CSV_FOLDER, 'CSV'))
 
 
 word_to_num = {
-    "zero": 0, "one": 1, "two": 2, "three": 3,
-    "four": 4, "five": 5, "six": 6,
-    "seven": 7, "eight": 8, "nine": 9,
-    "ten": 10
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, 
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "hundred": 100,
+
+    "kosong": 0, "satu": 1, "dua": 2, "tiga": 3, "empat": 4, "lima": 5,
+    "enam": 6, "tujuh": 7, "lapan": 8, "sembilan": 9, "sepuluh": 10,
+    "sebelas": 11, "dua puluh": 20, "tiga puluh": 30, "empat puluh": 40, "seratus": 100
 }
 
 def respond(result_str, method, lang_if_unsure="EN"):
@@ -51,8 +64,6 @@ def Invalid_input(reason=""):
         print("\n(Zero)\n ⚠️ Input not recognized. Try again with valid math operation ⚠️")
     return "EN"
 
-
-
 #--- Advanced Operations(√, %, **, !) ---
 def square_root(method):
     for keyword in ['√', 'square root of', 'square root', 'square of', 'square', 'punca kuasa dua']:
@@ -70,7 +81,9 @@ def square_root(method):
                 result = math.sqrt(number)
                 user_input = f"√{number} ="
                 today = datetime.now().strftime("%#m/%#d/%Y")
-                with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
+
+                
+                with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
                     csv.writer(file).writerow([user_input, result, today])
                 if 'punca kuasa dua' in keyword:
                     return respond(f"Punca kuasa dua bagi {number} ialah {result:.4f}", method, "MY")
@@ -105,7 +118,7 @@ def percentage(method):
 
                 today = datetime.now().strftime("%#m/%#d/%Y")
 
-                with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
+                with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
                     csv.writer(file).writerow([user_input, result, today])
 
                 if keyword in ['peratus', 'peratusan', 'daripada']:
@@ -129,7 +142,7 @@ def exponentiation(method):
                 result = num1 ** num2
                 user_input = f"{num1} ^ {num2} ="
                 today = datetime.now().strftime("%#m/%#d/%Y")
-                with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
+                with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
                     csv.writer(file).writerow([user_input, result, today])
                 if keyword in ['kuasa', 'berpangkat']:
                     return respond(f"{num1} dipangkatkan dengan {num2} = {result:.4f}", method, "MY")
@@ -139,31 +152,28 @@ def exponentiation(method):
                 return Invalid_input("Invalid exponent format")
     return None
 
+
 def factorial(method):
     for keyword in ['!', 'factorial', 'faktorial', 'bang', 'silang']:
         if keyword in method.lower():
             try:
-                match = re.search(r'(\d+)\s*!', method)
-                if match:
-                    num = int(match.group(1))
+                match = re.search(r'(\d+)', method)
+            
+                if not match:
+                    return Invalid_input("Please provide a number for the factorial.")
 
-                else:
-
-                    match = re.search(r'(\d+)', method)
-                    if not match:
-                        return Invalid_input("Invalid factorial format")
-
-                    num = int(match.group(1))
-
-                if num < 0:
-                    return Invalid_input("Factorial only defined for non-negative integers")
+                num = int(match.group(1))
+                
+                if num < 0: 
+                    return Invalid_input("Factorial only for non-negative integers")
+                if num > 100: 
+                    return Invalid_input("Number too large for Zero to handle!")
 
                 result = math.factorial(num)
-
+                
                 user_input = f"{num}! ="
                 today = datetime.now().strftime("%#m/%#d/%Y")
-
-                with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
+                with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
                     csv.writer(file).writerow([user_input, result, today])
 
                 if keyword in ['faktorial', 'bang', 'silang']:
@@ -173,7 +183,6 @@ def factorial(method):
 
             except:
                 return Invalid_input("Invalid factorial format")
-
     return None
 
 
@@ -191,8 +200,8 @@ def addition(method):
             user_input = " + ".join(map(str, numbers)) + " ="
             today = datetime.now().strftime("%#m/%#d/%Y")
 
-            with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
-                csv.writer(file).writerow([user_input, result, today])
+            with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
+                    csv.writer(file).writerow([user_input, result, today])
 
             return respond(f"{user_input} {result}", method, "MY" if keyword == "tambah" else "EN")
     return None
@@ -214,8 +223,8 @@ def subtraction(method):
             user_input = " - ".join(map(str, numbers)) + " ="
             today = datetime.now().strftime("%#m/%#d/%Y")
             
-            with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
-                csv.writer(file).writerow([user_input, result, today])
+            with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
+                    csv.writer(file).writerow([user_input, result, today])
             
             return respond(f"{user_input} {result}", method, "MY" if keyword in ['tolak', 'kurang'] else "EN")
     return None
@@ -235,8 +244,8 @@ def multiplication(method):
             user_input = " * ".join(map(str, numbers)) + " ="
             today = datetime.now().strftime("%#m/%#d/%Y")
 
-            with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
-                csv.writer(file).writerow([user_input, result, today])
+            with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
+                    csv.writer(file).writerow([user_input, result, today])
             
             return respond(f"{user_input} {result:.2f}", method, "MY" if keyword in ['darab', 'kali'] else "EN")
     return None
@@ -260,8 +269,8 @@ def division(method):
             user_input = " ÷ ".join(map(str, numbers)) + " ="
             today = datetime.now().strftime("%#m/%#d/%Y")
 
-            with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
-                csv.writer(file).writerow([user_input, result, today])
+            with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
+                    csv.writer(file).writerow([user_input, result, today])
 
             return respond(f"{user_input} {result:.2f}", method, "MY" if keyword == 'bahagi' else "EN")
     return None
@@ -279,32 +288,35 @@ def extract_all_numbers(method):
 
     return numbers
 
-def clean_history_file(file_path='CSV/calculate_history.csv'):
+def clean_history_file():
     try:
-        df = pd.read_csv(file_path)
-        df['User Input'] = df['User Input'].str.replace(r'[^0-9+\-*/.^()= ]', '', regex=True).str.strip()
-        df.to_csv(file_path, index=False, encoding='utf-8-sig')
-    except:
-        pass
+        with open(history_path, 'r', encoding='utf-8-sig') as f:
+            lines = f.readlines()
+
+        cleaned_lines = [lines[0]]
+        for line in lines[1:]:
+            cleaned_line = re.sub(r'[^0-9+*/.^()=√%!, \n-]', '', line)
+            cleaned_lines.append(cleaned_line)
+
+        with open(history_path, 'w', encoding='utf-8-sig') as file:
+            file.writelines(cleaned_lines)
+    except Exception as e:
+        print(f"Could not clean history: {e}")
 
 
 
 def ZeroCalculator(method):
     method = method.lower()
 
-    # --- History ---
-    if any(kw in method for kw in ['open history', 'calculate history', 'buka', 'pengiraan sejarah']):
+    # --- Open History ---
+    if ('open' in method and 'history' in method) or ('buka' in method or 'pengiraan sejarah' in method):
         try:
-            try:
-                history = pd.read_csv('CSV/calculate_history.csv', encoding='utf-8')
-            except:
-                history = pd.read_csv('CSV/calculate_history.csv', encoding='latin-1')
+            history = pd.read_csv(history_path, encoding='utf-8-sig')
 
             pd.set_option('display.max_row', None)
-            pd.set_option('display.max_columns', None)
             pd.set_option('display.width', None)
-            pd.set_option('display.colheader_justify', 'center')
-            if 'calculate' in method or 'history' in method:
+
+            if any(lang_kw in method for lang_kw in ['calculate', 'history']):
                 print("\n(Zero)\nSure! Here's your full calculation history:\n")
                 print("    ----- Calculate History -----\n", history)
                 return "EN"
@@ -316,11 +328,12 @@ def ZeroCalculator(method):
             print("\n(Zero)\nNo calculation history found.")
         return "NORMAL"
 
-    if any(kw in method for kw in ['clear the history', 'delete the history', 'bersihkan','hapus', 'sejarah']):
+    # --- Clear History ---
+    if ('clear' in method and 'history' in method) or ('delete' in method and 'history' in method) or \
+        ('bersihkan' in method and 'sejarah' in method) or ('hapus' in method and 'sejarah' in method):
         try:
-            with open('CSV/calculate_history.csv', 'w', newline='', encoding='utf-8-sig') as file:
-                writer = csv.writer(file)
-                writer.writerow(["User Input", "Result", "Date"])
+            with open(history_path, 'w', newline='', encoding='utf-8-sig') as file:
+                csv.writer(file).writerow(["User Input", "Result", "Date"])
             
             if any(kw in method for kw in ['bersihkan', 'hapus', 'sejarah']):
                 print("\n(Zero)\nSejarah pengiraan telah berjaya dibersihkan! 🧹")
@@ -328,7 +341,7 @@ def ZeroCalculator(method):
             else:
                 print("\n(Zero)\nHistory cleared successfully! 🧹")
                 return "EN"
-        except:
+        except Exception:
             print("\n(Zero)\nNo history file found to clear.")
             return "NORMAL"
 
@@ -339,7 +352,7 @@ def ZeroCalculator(method):
             
             user_input = f"{method} ="
             today = datetime.now().strftime("%#m/%#d/%Y")
-            with open('CSV/calculate_history.csv', 'a', newline='', encoding='utf-8-sig') as file:
+            with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
                 csv.writer(file).writerow([user_input, result, today])
             
             return respond(f"{clean_method} = {result:.2f}", method, "EN")
@@ -353,7 +366,7 @@ def ZeroCalculator(method):
 
 
     corrections = {
-        'squar': 'square',  'squer': 'square', 'squaroot': 'square root', 'sqrt': 'square root',
+        'squar': 'square',  'squer': 'square', 'sqre': 'square', 'sqare': 'square', 'squaroot': 'square root', 'sqrt': 'square root',
         'factori': 'factorial', 'factrial': 'factorial',
         'percen': 'percent', 'percantage': 'percentage', 
         'powr': 'power of', 'raisd': 'raised to', 'rasied': 'raised to',
