@@ -308,8 +308,8 @@ def division(method):
 
 def extract_all_numbers(method):
     numbers = []
-
-    numbers.extend([int(n) for n in re.findall(r'\d+', method)])
+    pattern = r'\d+\.?\d*'
+    numbers.extend([float(n) for n in re.findall(pattern, method)])
 
     words = method.lower().split()
     for word in words:
