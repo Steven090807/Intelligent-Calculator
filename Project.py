@@ -1,9 +1,10 @@
 import random
-import csv
-import time
 import pandas as pd
+import numpy as np
 from datetime import datetime
 import math
+import csv
+import time
 import re
 import os
 
@@ -28,20 +29,6 @@ def initialize_csv_system():
 csv_dir, history_path = initialize_csv_system()
 
 
-def ensure_csv_exists(lang="EN"):
-    if not os.path.exists(csv_dir):
-        msg = "\n(Zero)\nWarning: 'CSV' folder is missing!" if lang != "MY" else "\n(Zero)\nAmaran: Folder 'CSV' hilang!"
-        print(msg)
-        
-        prompt = "Create a new folder? (yes/no): " if lang != "MY" else "Bina folder baru? (ya/tidak): "
-        choice = input(prompt).lower().strip()
-        
-        if choice in ['yes', 'ya', 'y']:
-            os.makedirs(csv_dir)
-        else:
-            return False
-    return True
-
 
 word_to_num = {
     "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, 
@@ -53,6 +40,7 @@ word_to_num = {
     "enam": 6, "tujuh": 7, "lapan": 8, "sembilan": 9, "sepuluh": 10,
     "sebelas": 11, "dua puluh": 20, "tiga puluh": 30, "empat puluh": 40, "seratus": 100
 }
+           
 
 def respond(result_str, method, lang_if_unsure="EN"):
     Response = [
@@ -72,17 +60,6 @@ def respond(result_str, method, lang_if_unsure="EN"):
         print(f"\n(Zero)\n{result_str}")
         return lang_if_unsure
 
-
-def extract_numbers(method, keyword):
-    parts = method.split(keyword)
-    numbers = []
-    for part in parts:
-        try:
-            num = float(part.strip(" ?!.").split()[-1])
-            numbers.append(num)
-        except:
-            pass
-    return numbers
 
 def Invalid_input(reason=""):
     if reason:
@@ -125,7 +102,7 @@ def square_root(method):
                     return Invalid_input("Invalid square root input")
 
                 number = float(num_str)
-                result = math.sqrt(number)
+                result = np.sqrt(number)
                 save_to_history(f"√{number}", result, "MY" if keyword in ['punca kuasa dua'] else "EN")
                 
                 if 'punca kuasa dua' in keyword:
@@ -176,6 +153,7 @@ def exponentiation(method):
     for keyword in ['**', '^','power of', 'raised to', 'kuasa', 'berpangkat']:
         if keyword in method:
             try:
+
                 parts = method.split(keyword)
                 num1 = float(parts[0].split()[-1])
                 num2 = float(parts[1].strip(" ?!."))
@@ -187,8 +165,8 @@ def exponentiation(method):
                     return respond(f"{num1} dipangkatkan dengan {num2} = {result:.4f}", method, "MY")
                 else:
                     return respond(f"{num1} ^ {num2} = {result}", method, "EN")
-            except:
-                return Invalid_input("Invalid exponent format")
+            except Exception as e:
+                return Invalid_input(f"Invalid exponent format: {e}")
     return None
 
 
@@ -197,7 +175,7 @@ def factorial(method):
         if keyword in method.lower():
             try:
                 match = re.search(r'(\d+)', method)
-            
+
                 if not match:
                     return Invalid_input("Please provide a number for the factorial.")
 
@@ -227,82 +205,89 @@ def factorial(method):
 def addition(method):
     for keyword in ['+', 'plus', 'add', 'tambah']:
         if keyword in method.lower():
-            numbers = extract_all_numbers(method)
+            try: 
+                numbers = np.array(extract_all_numbers(method))
 
-            if not numbers:
-                return respond("I couldn't find any numbers to add!", method, "EN")
+                if numbers.size == 0:
+                    return respond("I couldn't find any numbers to add!", method, "EN")
 
 
-            result = sum(numbers)
-            lang = "MY" if keyword in ['tambah'] else "EN"
-            user_input = " + ".join(map(str, numbers)) + " ="
-            save_to_history(f"{user_input}", result, lang)
+                result = np.sum(numbers)
+                lang = "MY" if keyword in ['tambah'] else "EN"
+                user_input = " + ".join(map(str, numbers)) + " ="
+                save_to_history(f"{user_input}", result, lang)
 
-            return respond(f"{user_input} {result}", method, lang)
+                return respond(f"{user_input} {result}", method, lang)
+            except Exception as e:
+                return f"Error: {e}"
     return None
 
 
 def subtraction(method):
     for keyword in ['-', 'minus', 'subtract', 'tolak', 'kurang']:
         if keyword in method.lower():
+            try:
+                numbers = np.array(extract_all_numbers(method))
 
-            numbers = extract_all_numbers(method)
+                if numbers.size == 0:
+                    return respond("I couldn't find any numbers to subtract!", method, "EN")
 
-            if not numbers:
-                return respond("I couldn't find any numbers to subtract!", method, "EN")
-
-            result = numbers[0]
-            for num in numbers[1:]:
-                result -= num
+                result = numbers[0] - np.sum(numbers[1:])
+                    
+                lang = "MY" if keyword in ['tolak', 'kurang'] else "EN"
+                user_input = " - ".join(map(str, numbers)) + " ="
+                save_to_history(f"{user_input}", result, lang)
                 
-            lang = "MY" if keyword in ['tolak', 'kurang'] else "EN"
-            user_input = " - ".join(map(str, numbers)) + " ="
-            save_to_history(f"{user_input}", result, lang)
-            
-            return respond(f"{user_input} {result}", method, lang)
+                return respond(f"{user_input} {result}", method, lang)
+            except Exception as e:
+                return f"Error: {e}"
     return None
 
 
 def multiplication(method):
     for keyword in ['*', 'times', 'multiply', 'darab', 'kali']:
         if keyword in method.lower():
-            numbers = extract_all_numbers(method)
+            try:
+                numbers = np.array(extract_all_numbers(method))
 
-            if not numbers:
-                return respond("I couldn't find any numbers to multiply!", method, "EN")
-            result = 1
-            for num in numbers:
-                result *= num
+                if numbers.size == 0:
+                    return respond("I couldn't find any numbers to multiply!", method, "EN")
 
-            lang = "MY" if keyword in ['darab', 'kali'] else "EN"
-            user_input = " * ".join(map(str, numbers)) + " ="
-            save_to_history(f"{user_input}", result, lang)
+                result = np.prod(numbers)
 
-            return respond(f"{user_input} {result:.2f}", method, lang)
+                lang = "MY" if keyword in ['darab', 'kali'] else "EN"
+                user_input = " * ".join(map(str, numbers)) + " ="
+                save_to_history(f"{user_input}", result, lang)
+
+                return respond(f"{user_input} {result:.2f}", method, lang)
+            except Exception as e:
+                return f"Error: {e}"
     return None
 
 
 def division(method):
     for keyword in ['/', 'divide', 'bahagi', 'bagi']:
         if keyword in method.lower():
-            numbers = extract_all_numbers(method)
+            try:
+                numbers = np.array(extract_all_numbers(method))
 
-            if not numbers:
-                return respond("I couldn't find any numbers to divide!", method, "EN")
-            
-            result = numbers[0]
-            for num in numbers[1:]:
-                if num == 0:
+                if numbers.size == 0:
+                    return respond("I couldn't find any numbers to divide!", method, "EN")
+                
+                if 0 in numbers[1:]:
                     print("\n(Zero)\n❌ Cannot divide by zero ❌")
                     return "EN"
-                result /= num
+
+                result = numbers[0] / np.prod(numbers[1:])
 
 
-            user_input = " ÷ ".join(map(str, numbers)) + " ="
-            lang = "MY" if keyword in ['bahagi', 'bagi'] else "EN"
-            save_to_history(f"{user_input}", result, lang)
+                user_input = " ÷ ".join(map(str, numbers)) + " ="
+                lang = "MY" if keyword in ['bahagi', 'bagi'] else "EN"
+                save_to_history(f"{user_input}", result, lang)
 
-            return respond(f"{user_input} {result:.2f}", method, lang)
+                return respond(f"{user_input} {result:.2f}", method, lang)
+            except Exception as e:
+                return f"Error: {e}"
     return None
 
 
@@ -320,6 +305,9 @@ def extract_all_numbers(method):
 
 def clean_history_file():
     try:
+        if not os.path.exists(history_path):
+            return
+        
         with open(history_path, 'r', encoding='utf-8-sig') as f:
             lines = f.readlines()
 
@@ -509,6 +497,8 @@ def ZeroCalculator(method, lang="NORMAL"):
         else:
             return "NORMAL"
         
+
+        
     # --- All functions call ---
     for function in [square_root, percentage, exponentiation, factorial, addition, subtraction, multiplication, division]:
         lang_result = function(method)
@@ -597,19 +587,23 @@ def Main_Display():
             if user_input_lower.isdigit():
                 msg = "Sorry, do you need to calculate something?" if lang != "MY" else "Maaf, anda mahu kira sesuatu ke? (contoh: tambah 10 dan 5)"
                 print(f"\n(Zero)\n{msg}")
-                continue
+                
+            elif user_input_lower.isalpha() and len(user_input_lower) > 5:
+                msg = "Sorry, I don't understand Alien Language 🤣" if lang != "MY" else "Maaf, saya tak faham bahasa Alien 🤣"
+                print(f"\n(Zero)\n{msg}")
+
             elif any(phrase in user_input_lower for phrase in friendly_keywords):
                 msg = "It's a pleasure to meet you! I'd willing to help anytime. 🧮" if lang != "MY" else "Saya pun gembira berjumpa anda! Saya sedia membantu kira-kira bila-bila masa. 🧮"
                 print(f"\n(Zero)\n{msg}")
-                continue
+                
             elif any(phrase in user_input_lower for phrase in casual_keywords):
                 msg = "What's up man!! I've been waiting for you for a long time"
                 print(f"\n(Zero)\n{msg}")
-                continue
+                
             elif any(greet in user_input_lower.split() for greet in greet_keywords):
                 msg = "Hello! I'm Zero, your math assistant" if lang != "MY" else "Hai! Saya Zero, pembantu matematik anda."
                 print(f"\n(Zero)\n{msg}")
-                continue
+                
         
 
         result_lang = ZeroCalculator(user_input, lang=lang)
