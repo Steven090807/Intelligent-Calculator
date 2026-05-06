@@ -2,13 +2,44 @@ import random
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import requests
 import math
 import csv
 import time
+import qrcode
 import re
 import os
 
+URL = "http://localhost:5000/api"
+def call_smartguard_api(endpoint="start-scanner"):
+    url = f"{URL}/{endpoint}"
+    try:
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
 
+            messages = {
+                "start-scanner": "API Request Sent: Scanner is opening.",
+                "stats": f"Total Residents: {data.get('total_residents')}"
+            }
+            
+            print(f"\n(Zero)\n{messages.get(endpoint, 'Request Successful')}")
+            return True
+        else:
+            print(f"\n(Zero)\n Request failed with status: {response.status_code}")
+            return False
+            
+    except requests.exceptions.ConnectionError:
+        print(f"\n(Zero)\nError: SmartGuard Server is not running!")
+        return False
+    except Exception as e:
+        print(f"\n(Zero)\nUnexpected Error: {e}")
+        return False
+    
+
+
+    
 
 #--- Global CSV Path ---
 def initialize_csv_system():
@@ -86,6 +117,25 @@ def save_to_history(user_input, result, lang="EN"):
             
     except Exception as e:
         print(f"\n(Zero)\n❌ Error saving history: {e}")
+
+
+def clean_history_file():
+    try:
+        if not os.path.exists(history_path):
+            return
+        
+        with open(history_path, 'r', encoding='utf-8-sig') as f:
+            lines = f.readlines()
+
+        cleaned_lines = [lines[0]]
+        for line in lines[1:]:
+            cleaned_line = re.sub(r'[^0-9+*/.^()=√%!, \n-]', '', line)
+            cleaned_lines.append(cleaned_line)
+
+        with open(history_path, 'w', encoding='utf-8-sig') as file:
+            file.writelines(cleaned_lines)
+    except Exception as e:
+        print(f"Could not clean history: {e}")
 
 
 #--- Advanced Operations(√, %, **, !) ---
@@ -175,7 +225,7 @@ def factorial(method):
         if keyword in method.lower():
             try:
                 match = re.search(r'(\d+)', method)
-
+                
                 if not match:
                     return Invalid_input("Please provide a number for the factorial.")
 
@@ -303,86 +353,64 @@ def extract_all_numbers(method):
 
     return numbers
 
-def clean_history_file():
-    try:
-        if not os.path.exists(history_path):
-            return
-        
-        with open(history_path, 'r', encoding='utf-8-sig') as f:
-            lines = f.readlines()
 
-        cleaned_lines = [lines[0]]
-        for line in lines[1:]:
-            cleaned_line = re.sub(r'[^0-9+*/.^()=√%!, \n-]', '', line)
-            cleaned_lines.append(cleaned_line)
-
-        with open(history_path, 'w', encoding='utf-8-sig') as file:
-            file.writelines(cleaned_lines)
-    except Exception as e:
-        print(f"Could not clean history: {e}")
-
-
-
+last_result_data = ""
 def ZeroCalculator(method, lang="NORMAL"):
-    method = method.lower()
+    global last_result_data
+    method = method.lower().strip()
 
-    # --- Open History ---
-    if ('open' in method and 'history' in method) or ('buka' in method or 'pengiraan sejarah' in method):
-        try:
-            history = pd.read_csv(history_path, encoding='utf-8-sig')
+# --- QR Code Generation Logic ---
+    qr_keywords = ["make this qr code", "make a qr code", "buat qr code"]
+    if any(kw in method for kw in qr_keywords):
+        if last_result_data:
+            try:
+                qr = qrcode.QRCode(version=1, box_size=10, border=1)
+                qr.add_data(last_result_data)
+                qr.make(fit=True)
 
-            pd.set_option('display.max_row', None)
-            pd.set_option('display.width', None)
+                img = qr.make_image(fill_color="black", back_color="white")
+                img_path = "math_qr.png"
+                img.save(img_path)
 
-            if any(lang_kw in method for lang_kw in ['calculate', 'history']):
-                print("\n(Zero)\nSure! Here's your full calculation history:\n")
-                print("    ----- Calculate History -----\n", history)
-                return "EN"
-            else:
-                print("\n(Zero)\nBaik! Ini semua sejarah pengiraan anda:\n")
-                print("    ----- Sejarah Pengiraan -----\n", history)
-                return "MY"
-        except :
-            print("\n(Zero)\nNo calculation history found.")
-        return "NORMAL"
-
-    # --- Clear History ---
-    if (('clear' in method and 'history' in method) or ('delete' in method and 'history' in method) or 
-        ('bersihkan' in method and 'sejarah' in method) or ('hapus' in method and 'sejarah' in method)):
-        try:
-            with open(history_path, 'w', newline='', encoding='utf-8-sig') as file:
-                csv.writer(file).writerow(["User Input", "Result", "Date"])
-            
-            if any(kw in method for kw in ['bersihkan', 'hapus', 'sejarah']):
-                print("\n(Zero)\nSejarah pengiraan telah berjaya dibersihkan! 🧹")
-                return "MY"
-            else:
-                print("\n(Zero)\nHistory cleared successfully! 🧹")
-                return "EN"
-        except Exception:
-            print("\n(Zero)\nNo history file found to clear.")
-            return "NORMAL"
-
-    if re.search(r'\d+\s*[+\-*/^()]\s*\d+', method):
-        try:
+                if lang == "MY":
+                    print(f"\n(Zero)\nSiap! QR Code untuk '{last_result_data}' telah disimpan sebagai {img_path}")
+                else:
+                    print(f"\n(Zero)\nDone! The QR Code for '{last_result_data}' has been saved as {img_path}")
+                
+                return lang
+            except Exception as e:
+                print(f"\n(Zero)\nError making QR code: {e}")
+        else:
+            print("\n(Zero)\nNothing to convert! Please do a calculation first.")
+            return lang
+    
+    
+    if re.search(r'\d+\s*[+\-*/^%()!]\s*|\bsqrt\b', method):
+        try:    
             clean_method = re.sub(r'[^0-9+\-*/.**() ]', '', method.replace('^', '**')).strip()
             result = eval(clean_method)
+
+            last_result_data = f"{clean_method} = {result:.2f}"
             
             user_input = f"{method} ="
             today = datetime.now().strftime("%#m/%#d/%Y")
             with open(history_path, 'a', newline='', encoding='utf-8-sig') as file:
                 csv.writer(file).writerow([user_input, result, today])
             
-            return respond(f"{clean_method} = {result:.2f}", method, "EN")
+            return respond(last_result_data, method, "EN")
         except:
-            pass 
+            pass
 
+
+    # Handle Saving & Return
     for function in [square_root, percentage, exponentiation, factorial, addition, subtraction, multiplication, division]:
         lang_result = function(method)
         if lang_result:
+            if lang_result not in ["EN", "MY", "EXIT", "NORMAL"]:
+                last_result_data = lang_result
             return lang_result
-
-
+        
+    
     corrections = {
         # Calculate Math Function Commands
         'addd': 'add', 'ad': 'add',
@@ -415,8 +443,8 @@ def ZeroCalculator(method, lang="NORMAL"):
 
         'tukah': 'tukar', 'tukr': 'tukar', 'tkr': 'tukar',
         'bahas': 'bahasa', 'bahsa': 'bahasa', 'bhs': 'bahasa',
-        'melayu': 'melayu', 'mlyu': 'melayu', 'bm': 'bm',
-        'inggeris': 'inggeris', 'ingris': 'inggeris', 'bi': 'bi',
+        'melyu': 'melayu', 'mlyu': 'melayu',
+        'inggeris': 'inggeris', 'ingris': 'inggeris',
 
         # Calculate History View Commands
         'openn': 'open', 'oepn': 'open', 'opn': 'open',
@@ -439,8 +467,8 @@ def ZeroCalculator(method, lang="NORMAL"):
     # --- spelling corrections ---
     words = method.split()
     for wrong_word, correct_word in corrections.items():
-        malay_confirm = ['ya', 'betul', 'yup', 'haah', 'ya betul', 'boleh', 'ngam', 'setuju']
-        endlish_confirm = ['yes', 'yep', 'yup', 'yeah', 'correct', 'right', 'sure', 'ok', "that's right"]
+        all_confirm = ['ya', 'betul', 'yup', 'haah', 'ya betul', 'boleh', 'ngam', 'setuju',
+                       'yes', 'yep', 'yup', 'yeah', 'correct', 'right', 'sure', 'ok', "that's right"]
         if wrong_word in words:
             # -- Check for calculation after correction in Malay and English ---
             is_malay = correct_word in [
@@ -449,12 +477,12 @@ def ZeroCalculator(method, lang="NORMAL"):
                 ]
             if is_malay:
                 print(f"\n(Zero)\nMaksud anda '{correct_word}', betul?")
-                if input("\n(Anda)\n").lower().strip() not in malay_confirm:
+                if input("\n(Anda)\n").lower().strip() not in all_confirm:
                     print("\n(Zero)\nAduh! Cuba lagi ya.")
                     return "MY"                    
             else:
                 print(f"\n(Zero)\nYou meant '{correct_word}', right?")
-                if input("\n(You)\n").lower().strip() not in endlish_confirm:
+                if input("\n(You)\n").lower().strip() not in all_confirm:
                     print("\n(Zero)\nOops! Try again.")
                     return "EN"
             method = method.replace(wrong_word, correct_word)
@@ -474,7 +502,57 @@ def ZeroCalculator(method, lang="NORMAL"):
             if any(kw in method for kw in ['clear', 'delete', 'bersihkan', 'hapus']):
                 if 'history' in method or 'sejarah' in method:
                     return ZeroCalculator(method, lang)
-            break
+            return ZeroCalculator(method, lang)
+
+    
+        
+    if any(kw in method for kw in ["open scanner", "scan qr"]):
+        call_smartguard_api()
+        return lang
+    
+    if any(kw in method for kw in ["gets resident count", "resident count"]):
+        call_smartguard_api("stats")
+        return lang
+    
+    
+
+    # --- Open History ---
+    if ('open' in method and 'history' in method) or ('buka' in method or 'pengiraan sejarah' in method):
+        try:
+            history = pd.read_csv(history_path, encoding='utf-8-sig')
+
+            pd.set_option('display.max_row', None)
+            pd.set_option('display.width', None)
+
+            if any(lang_kw in method for lang_kw in ['calculate', 'history']):
+                print("\n(Zero)\nSure! Here's your full calculation history:\n")
+                print("    ------- Calculate History -------\n", history)
+                return "EN"
+            else:
+                print("\n(Zero)\nBaik! Ini semua sejarah pengiraan anda:\n")
+                print("    ------- Sejarah Pengiraan -------\n", history)
+                return "MY"
+        except :
+            print("\n(Zero)\nNo calculation history found.")
+        return "NORMAL"
+
+    # --- Delete History ---
+    if (('clear' in method and 'history' in method) or ('delete' in method and 'history' in method) or 
+        ('bersihkan' in method and 'sejarah' in method) or ('hapus' in method and 'sejarah' in method)):
+        try:
+            with open(history_path, 'w', newline='', encoding='utf-8-sig') as file:
+                csv.writer(file).writerow(["User Input", "Result", "Date"])
+            
+            if any(kw in method for kw in ['bersihkan', 'hapus', 'sejarah']):
+                print("\n(Zero)\nSejarah pengiraan telah berjaya dibersihkan! 🧹")
+                return "MY"
+            else:
+                print("\n(Zero)\nHistory cleared successfully! 🧹")
+                return "EN"
+        except Exception:
+            print("\n(Zero)\nNo history file found to clear.")
+            return "NORMAL"
+
         
     # --- Thank Message ---
     en_thanks = ['thank', 'thanks', 'thx', 'tq', 'ty', 'appreciated']
@@ -495,16 +573,7 @@ def ZeroCalculator(method, lang="NORMAL"):
         if continuee == "exit":
             return "EXIT" 
         else:
-            return "NORMAL"
-        
-
-        
-    # --- All functions call ---
-    for function in [square_root, percentage, exponentiation, factorial, addition, subtraction, multiplication, division]:
-        lang_result = function(method)
-        if lang_result:
-            return lang_result
-    
+            return "NORMAL"  
 
     
 
@@ -536,7 +605,7 @@ def Main_Display():
             user_input = input("\n(Zero)\nHow can I help you?\n\n(You)\n")
             clean_history_file()
 
-        malay_confirm = ["change to m","switch to m", "tukar ke b", "tukar ke m"]
+        malay_confirm = ["change to m","switch to m", "switch to b", "tukar ke b", "tukar ke m"]
         endlish_confirm = ["change to e", "switch to e", "tukar ke bahasa inggeris", "tukar ke e"]
         user_input_lower = user_input.lower().strip()
         if any(phrase in user_input_lower for phrase in malay_confirm):
@@ -555,25 +624,27 @@ def Main_Display():
 
         math_keywords = [
             'add', 'plus', 'sum', 'total', 'increase', '+',
-            'tambah', 'campur', 'jumlah',
             'minus', 'subtract', 'less', 'difference', 'deduct', '-',
-            'tolak', 'kurang', 'beza',
             'times', 'multiply', 'multiplied', 'product', '*',
-            'darab', 'kali', 'ganda',
             'divide', 'divided', 'over', 'quotient', '/',
-            'bahagi', 'bagi',
             'power', 'raised', 'exponent', '^',
-            'kuasa', 'berpangkat', 'pangkat',
             'square root', 'sqrt', 'root', '√',
-            'punca kuasa dua', 'akar',
             'square', 'kuasa dua',
             'percent', 'percentage', '%',
-            'peratus', 'peratusan', 'daripada',
             'factorial', '!', 
-            'faktorial', 'bang', 'silang',
             'what is', 'calculate', 'compute', 'find', 'evaluate',
-            'berapa', 'kira', 'hitung'
             'history', 'sejarah', 'view', 'show', 'clear', 'delete'
+
+
+            'tambah', 'campur', 'jumlah',
+            'tolak', 'kurang', 'beza',
+            'darab', 'kali', 'ganda',
+            'bahagi', 'bagi',
+            'kuasa', 'berpangkat', 'pangkat',
+            'punca kuasa dua', 'akar',
+            'peratus', 'peratusan', 'daripada',
+            'faktorial', 'bang', 'silang',
+            'berapa', 'kira', 'hitung'
         ]
         greet_keywords = ["hello", "hi", "hey", "hallo", "halo", "apa khabar"]
         friendly_keywords = ["nice to meet you", "gembira berjumpa", "senang jumpa"]
